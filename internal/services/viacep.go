@@ -8,14 +8,17 @@ import (
 	"net/http"
 )
 
+var ViaCEPClient = &http.Client{}
+var ViaCEPBaseURL = "https://viacep.com.br"
+
 type CEPInfo struct {
 	Localidade string `json:"localidade"`
 	Erro       string `json:"erro,omitempty"`
 }
 
 func GetCEPInfo(cep string) (*CEPInfo, error) {
-	url := fmt.Sprintf("https://viacep.com.br/ws/%s/json/", cep)
-	resp, err := http.Get(url)
+	url := fmt.Sprintf("%s/ws/%s/json/", ViaCEPBaseURL, cep)
+	resp, err := ViaCEPClient.Get(url)
 	if err != nil {
 		return nil, err
 	}

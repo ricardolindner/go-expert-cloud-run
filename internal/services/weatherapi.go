@@ -10,6 +10,9 @@ import (
 	"os"
 )
 
+var WeatherAPIClient = &http.Client{}
+var WeatherAPIBaseURL = "http://api.weatherapi.com/v1"
+
 type Weather struct {
 	Current struct {
 		TempC float64 `json:"temp_c"`
@@ -20,9 +23,9 @@ func GetWeather(city string) (*Weather, error) {
 	apiKey := os.Getenv("WEATHER_API_KEY")
 	encodedCity := url.QueryEscape(city)
 
-	url := fmt.Sprintf("http://api.weatherapi.com/v1/current.json?key=%s&q=%s", apiKey, encodedCity)
+	url := fmt.Sprintf("%s/current.json?key=%s&q=%s", WeatherAPIBaseURL, apiKey, encodedCity)
 
-	resp, err := http.Get(url)
+	resp, err := WeatherAPIClient.Get(url)
 	if err != nil {
 		return nil, err
 	}

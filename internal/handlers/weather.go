@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/ricardolindner/go-expert-cloud-run/internal/services"
 	"github.com/ricardolindner/go-expert-cloud-run/internal/util"
@@ -19,19 +18,19 @@ func GetWeather(w http.ResponseWriter, r *http.Request) {
 	cep := r.URL.Query().Get("cep")
 
 	if !util.IsValidCEP(cep) {
-		http.Error(w, "invalid zipcode", http.StatusUnprocessableEntity)
+		sendJSONError(w, "invalid zipcode", http.StatusUnprocessableEntity)
 		return
 	}
 
 	cepInfo, err := services.GetCEPInfo(cep)
 	if err != nil {
-		http.Error(w, "can not find zipcode", http.StatusNotFound)
+		sendJSONError(w, "can not find zipcode", http.StatusNotFound)
 		return
 	}
 
 	weather, err := services.GetWeather(cepInfo.Localidade)
 	if err != nil {
-		http.Error(w, "can not find weather for this location", http.StatusNotFound)
+		sendJSONError(w, "can not find weather for this location", http.StatusNotFound)
 		return
 	}
 
@@ -45,15 +44,16 @@ func GetWeather(w http.ResponseWriter, r *http.Request) {
 		TempK: tempK,
 	}
 
-	jsonData, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	jsonString := strings.Replace(string(jsonData), ":", ": ", -1)
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(jsonString))
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		sendJSONError(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+}
+
+func sendJSONError(w http.ResponseWriter, message string, statusCode int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(map[string]string{"error": message})
 }
