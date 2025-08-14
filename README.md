@@ -13,10 +13,10 @@ The application is designed for deployment on Google Cloud Run and follows a cle
   - [Environment Variables (.env)](#environment-variables-env)
   - [Example .env File](#example-env-file)
 - [Running the Project](#running-the-project)
-- [API Endpoints](#testing-the-rate-limiter)
+- [API Endpoints](#api-endpoints)
     - [Weather by ZIP code](#weather-by-zip-code)
     - [Error Handling](#error-handling)
-
+- [Testing](#testing)
 ---
 
 ## Project Structure
@@ -45,8 +45,9 @@ go-expert-cloud-run/
 ## How It Works
 * The application exposes a single HTTP endpoint /weather.
 * It accepts a cep (ZIP code) query parameter in the URL.
-* The server validates the ZIP code.
-* It calls an external weather API (via WEATHER_API_KEY) to get temperature data for the location.
+* The server validates the ZIP code format (must be an 8-digit number).
+* It queries the ViaCEP API to retrieve the city associated with the given ZIP code.
+* Using the city name, it calls the WeatherAPI.com service (via WEATHER_API_KEY) to get the current temperature.
 * The response is a JSON object containing the temperature in Celsius, Fahrenheit, and Kelvin.
 
 ## Getting Started
@@ -98,7 +99,7 @@ docker build -t go-weather-challenge .
 ```
 Then, run the container, injecting the API key:
 ```bash
-docker run -p 8080:8080 --name go-weather-challenge -d -e WEATHER_API_KEY="SUA_CHAVE_AQUI" go-weather-challenge
+docker run -p 8080:8080 --name go-weather-challenge -d -e WEATHER_API_KEY="YOUR_KEY_HERE" go-weather-challenge
 ```
 
 ## API Endpoints
@@ -116,7 +117,7 @@ curl "http://localhost:8080/weather?cep=66010020"
 
 Example Success Response (200 OK):
 ```json
-{"temp_C": 12.1,"temp_F": 53.78,"temp_K": 285.1}
+{"temp_C": 12.1, "temp_F": 53.78, "temp_K": 285.1}
 ```
 
 ### Error Handling
@@ -138,3 +139,16 @@ If the external API returns an unexpected error or the server fails to process t
 ```json
 {"error": "failed to fetch weather data"}
 ```
+
+## Testing
+* Run unit tests locally:
+```bash
+go test ./...
+```
+This command runs all unit tests for the project.
+* Test the deployed API on Google Cloud Run:
+Replace {{cep}} with a valid Brazilian ZIP code and run:
+```bash
+curl "https://go-expert-weather-83861101913.us-central1.run.app/weather?cep={{cep}}"
+```
+This will send a request to the production endpoint deployed on Google Cloud Run.
